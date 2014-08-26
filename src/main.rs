@@ -4,8 +4,7 @@ use std::os::args;
 use std::io::fs::File;
 use std::path::posix::Path;
 
-#[main]
-fn main() {
+pub fn main() {
   let arg_vec = args();
   if arg_vec.len() < 1 {
     return;
