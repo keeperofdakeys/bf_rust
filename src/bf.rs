@@ -1,6 +1,7 @@
 use std::io::stdio::stdin_raw;
 use std::io::stdio::stdout_raw;
 
+#[deriving(PartialEq)]
 pub enum BFCommand {
   IncPnt,
   DecPnt,
@@ -9,6 +10,7 @@ pub enum BFCommand {
   OutData,
   InData,
   LoopStart( uint ),
+  LoopStartMarker,
   LoopEnd( uint )
 }
 
@@ -32,6 +34,7 @@ pub fn run_program( prog: Vec<BFCommand> ) {
           continue;
         }
       }
+      LoopStartMarker => break,
       LoopEnd( i ) => {
         if *vec_get( &mut data, ptr ) != 0 {
           inc_ptr = i + 1;

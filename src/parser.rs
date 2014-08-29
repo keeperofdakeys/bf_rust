@@ -1,4 +1,4 @@
-use bf::{BFCommand, IncPnt, DecPnt, IncData, DecData, OutData, InData, LoopStart, LoopEnd};
+use bf::{BFCommand, IncPnt, DecPnt, IncData, DecData, OutData, InData, LoopStart, LoopStartMarker, LoopEnd};
 use std::io::IoResult;
 
 pub fn parse_stream<T: Iterator<IoResult<u8>>>( mut input: T ) -> Option<Vec<BFCommand>> {
@@ -11,28 +11,36 @@ pub fn parse_stream<T: Iterator<IoResult<u8>>>( mut input: T ) -> Option<Vec<BFC
       Ok(t) => t,
       Err(_) => break
     };
-    program.push(
-      match token {
-        b'>' => IncPnt,
-        b'<' => DecPnt,
-        b'+' => IncData,
-        b'-' => DecData,
-        b'.' => OutData,
-        b',' => InData,
-        b'[' => {
-          loop_stack.push( inc_ptr );
-          LoopStart( inc_ptr )
-        }
-        b']' => {
-          let ptr = match loop_stack.pop() {
-            Some(p) => p,
-            None => return None
-          };
-          LoopEnd( ptr )
-        },
-        _ => continue
+    let cmd = match token {
+      b'>' => IncPnt,
+      b'<' => DecPnt,
+      b'+' => IncData,
+      b'-' => DecData,
+      b'.' => OutData,
+      b',' => InData,
+      b'[' => {
+        loop_stack.push( inc_ptr );
+        LoopStartMarker
       }
-    );
+      b']' => {
+        let ptr = match loop_stack.pop() {
+          Some(p) => p,
+          None => return None
+        };
+        {
+          let ref_slice: &mut [BFCommand] = program.as_mut_slice();
+          match ref_slice.get_mut( ptr ) {
+            Some( ref mut loop_start ) if **loop_start == LoopStartMarker => {
+              **loop_start = LoopStart( inc_ptr );
+            },
+            _ => {}
+          }
+        }
+        LoopEnd( ptr )
+      },
+      _ => continue
+    };
+    program.push( cmd );
     inc_ptr += 1;
   }
 
